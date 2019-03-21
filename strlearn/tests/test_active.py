@@ -1,5 +1,6 @@
 """Testing active learning approach."""
 import sys
+
 import strlearn as sl
 
 sys.path.insert(0, "../..")
@@ -21,7 +22,7 @@ def test_active():
         for treshold in tresholds:
             controllers.append(sl.controllers.BLALC(budget=budget, treshold=treshold))
 
-    stream = sl.utils.StreamGenerator(
+    stream = sl.streams.StreamGenerator(
         drift_type="sudden", n_chunks=10, n_drifts=1, n_features=4, chunk_size=100
     )
     for controller in controllers:

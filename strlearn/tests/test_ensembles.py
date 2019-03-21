@@ -8,7 +8,7 @@ sys.path.insert(0, "../..")
 
 def test_PE():
     """Pruned Ensemble."""
-    stream = sl.utils.StreamGenerator(
+    stream = sl.streams.StreamGenerator(
         drift_type="sudden", n_chunks=10, n_drifts=1, n_features=4, chunk_size=100
     )
     clf = sl.ensembles.PrunedEnsemble()
@@ -18,7 +18,7 @@ def test_PE():
 
 def test_WAE():
     """Bare WAE."""
-    stream = sl.utils.StreamGenerator(
+    stream = sl.streams.StreamGenerator(
         drift_type="sudden", n_chunks=10, n_drifts=1, n_features=4, chunk_size=100
     )
     clf = sl.ensembles.WAE()
@@ -28,7 +28,7 @@ def test_WAE():
 
 def test_pp_WAE():
     """Post pruned WAE."""
-    stream = sl.utils.StreamGenerator(
+    stream = sl.streams.StreamGenerator(
         drift_type="sudden", n_chunks=10, n_drifts=1, n_features=4, chunk_size=100
     )
     clf = sl.ensembles.WAE(post_pruning=True)
@@ -45,7 +45,7 @@ def test_WAE_wcm():
         "pta_related_to_whole",
         "bell_curve",
     )
-    stream = sl.utils.StreamGenerator(
+    stream = sl.streams.StreamGenerator(
         drift_type="sudden", n_chunks=10, n_drifts=1, n_features=4, chunk_size=100
     )
     for method in methods:
@@ -58,7 +58,7 @@ def test_WAE_wcm():
 def test_WAE_am():
     """Various aging methods of WAE."""
     methods = ("weights_proportional", "constant", "gaussian")
-    stream = sl.utils.StreamGenerator(
+    stream = sl.streams.StreamGenerator(
         drift_type="sudden", n_chunks=10, n_drifts=1, n_features=4, chunk_size=100
     )
     for method in methods:
@@ -70,7 +70,7 @@ def test_WAE_am():
 
 def test_WAE_rejuvenation():
     """Rejuvenation of WAE."""
-    stream = sl.utils.StreamGenerator(
+    stream = sl.streams.StreamGenerator(
         drift_type="sudden", n_chunks=10, n_drifts=1, n_features=4, chunk_size=100
     )
     clf = sl.ensembles.WAE(rejuvenation_power=0.5)
@@ -80,7 +80,7 @@ def test_WAE_rejuvenation():
 
 def test_pp_WAE_rejuvenation():
     """Post pruning with rejuvenation WAE."""
-    stream = sl.utils.StreamGenerator(
+    stream = sl.streams.StreamGenerator(
         drift_type="sudden", n_chunks=10, n_drifts=1, n_features=4, chunk_size=100
     )
     clf = sl.ensembles.WAE(rejuvenation_power=0.5, post_pruning=True)
@@ -91,7 +91,7 @@ def test_pp_WAE_rejuvenation():
 """
 def test_REA():
     # Testing REA.
-    stream = sl.utils.ARFF('toyset.arff')
+    stream = sl.streams.ARFF('toyset.arff')
     clf = sl.ensembles.REA()
     learner = sl.learners.TestAndTrain(stream, clf)
     learner.run()

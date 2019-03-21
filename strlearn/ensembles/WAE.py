@@ -3,17 +3,18 @@ Weighted Aging Ensemble.
 
 """
 
-from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-# from sklearn.utils import check_random_state
-# from sklearn.utils.multiclass import unique_labels
-# from sklearn.utils.multiclass import check_classification_targets
-from sklearn.utils.multiclass import _check_partial_fit_first_call
+import numpy as np
+import warnings
 from sklearn import base
 from sklearn import neighbors
-import numpy as np
+from sklearn.base import BaseEstimator, ClassifierMixin
+# from sklearn.streams import check_random_state
+# from sklearn.streams.multiclass import unique_labels
+# from sklearn.streams.multiclass import check_classification_targets
+from sklearn.utils.multiclass import _check_partial_fit_first_call
+from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
+
 from ..ensembles import pruning
-import warnings
 
 warnings.simplefilter('always')
 

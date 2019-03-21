@@ -2,9 +2,7 @@
 """Toolbox for streaming data."""
 from __future__ import absolute_import
 
-import codecs
 import os
-
 from setuptools import find_packages, setup
 
 # get __version__ from _version.py
@@ -20,8 +18,9 @@ URL = 'https://github.com/w4k2/stream-learn'
 LICENSE = 'MIT'
 DOWNLOAD_URL = 'https://github.com/w4k2/stream-learn'
 VERSION = __version__
-INSTALL_REQUIRES = ['numpy', 'scipy', 'scikit-learn', 'liac-arff','scikit-learn','tqdm','future']
 
+with open('requirements.txt') as fid:
+    INSTALL_REQUIRES = [l.strip() for l in fid.readlines() if l]
 
 setup(name=DISTNAME,
       maintainer=MAINTAINER,

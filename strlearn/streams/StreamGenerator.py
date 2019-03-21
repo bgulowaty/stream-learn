@@ -3,27 +3,38 @@ Stream Generator.
 
 A class to generate streams.
 """
-from sklearn.datasets import make_classification
 import numpy as np
-import matplotlib.pyplot as plt
+from sklearn.datasets import make_classification
+from typing import Tuple, Any
+
+from strlearn.streams.BaseStream import BaseStream
 
 DRIFT_TYPES = ("sudden", "gradual")
 
 
-class StreamGenerator:
+class StreamGenerator(BaseStream):
     """Stream generator."""
 
+    def get_classes(self):
+        return self._classes
+
+    def is_dry(self) -> bool:
+        return self._is_dry
+
+    def get_next_samples(self, chunk_size: int = 1) -> Tuple[Any, Any]:
+        return self.get_chunk()
+
     def __init__(
-        self,
-        chunk_size=500,
-        n_chunks=200,
-        n_features=8,
-        distribution=[0.5, 0.5],
-        n_drifts=5,
-        class_sep=1.0,
-        drift_type="gradual",
-        random_state=0,
-        flip_y=0.01,
+            self,
+            chunk_size=500,
+            n_chunks=200,
+            n_features=8,
+            distribution=[0.5, 0.5],
+            n_drifts=5,
+            class_sep=1.0,
+            drift_type="gradual",
+            random_state=0,
+            flip_y=0.01,
     ):
         # Store stream parameters
         self.chunk_size = chunk_size
@@ -36,7 +47,7 @@ class StreamGenerator:
         self.class_sep = class_sep
         self.n_concepts = self.n_drifts + 2
         self.distribution = distribution
-        self.classes = np.array(range(len(self.distribution)))
+        self._classes = np.array(range(len(self.distribution)))
         self.n_features = n_features
         self.drift_type = drift_type
         self.n_classes = len(self.distribution)
@@ -64,7 +75,7 @@ class StreamGenerator:
         pass
 
     def reset(self):
-        self.is_dry = False
+        self._is_dry = False
         self.chunks_generated = 0
         self.concept_usages = np.zeros(self.n_concepts).astype(int)
 
@@ -100,20 +111,20 @@ class StreamGenerator:
             self.usage_curve = np.round(
                 np.abs(
                     (
-                        np.cos(
-                            np.linspace(
-                                0, np.pi * (self.n_drifts + 1) / 2, self.n_chunks + 1
+                            np.cos(
+                                np.linspace(
+                                    0, np.pi * (self.n_drifts + 1) / 2, self.n_chunks + 1
+                                )
+                                % (np.pi / 2)
                             )
-                            % (np.pi / 2)
-                        )
-                        * self.chunk_size
+                            * self.chunk_size
                     )
                 )
             ).astype(int)[:-1]
 
         elif self.drift_type == "sudden":
             self.usage_curve = (self.concept_dominances * self.chunk_size) % (
-                self.chunk_size * 2
+                    self.chunk_size * 2
             )
 
     def get_chunk(self):
@@ -137,19 +148,20 @@ class StreamGenerator:
         address_b = self.concept_usages[[first, second]]
 
         X = np.append(
-            self.concepts[first][0][address_a[0] : address_b[0]],
-            self.concepts[second][0][address_a[1] : address_b[1]],
+            self.concepts[first][0][address_a[0]: address_b[0]],
+            self.concepts[second][0][address_a[1]: address_b[1]],
             axis=0,
         )
         y = np.append(
-            self.concepts[first][1][address_a[0] : address_b[0]],
-            self.concepts[second][1][address_a[1] : address_b[1]],
+            self.concepts[first][1][address_a[0]: address_b[0]],
+            self.concepts[second][1][address_a[1]: address_b[1]],
             axis=0,
         )
 
         self.chunks_generated += 1
+
         if self.chunks_generated == self.n_chunks:
-            self.is_dry = True
+            self._is_dry = True
 
         """ Chunk plotter
         plt.figure(figsize=(4, 4))

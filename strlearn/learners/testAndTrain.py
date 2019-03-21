@@ -1,11 +1,17 @@
 """Learnerr module."""
-from sklearn import base
 import time
+
 import csv
+from attr import attrs
+from pytypes import typechecked
+from sklearn import base
 from sklearn import neural_network
+
 from strlearn import controllers
 
 
+@typechecked
+@attrs
 class TestAndTrain(object):
     """
     Perform learning procedure on stream.
@@ -37,10 +43,10 @@ class TestAndTrain(object):
     """
 
     def __init__(
-        self,
-        stream,
-        base_classifier=neural_network.MLPClassifier(),
-        controller=controllers.Bare(),
+            self,
+            stream,
+            base_classifier=neural_network.MLPClassifier(),
+            controller=controllers.Bare(),
     ):
         """Initializer."""
         self.base_classifier = base_classifier

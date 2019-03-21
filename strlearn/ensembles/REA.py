@@ -1,12 +1,14 @@
 """REA implementation."""
+import math
+
+import numpy as np
 from sklearn import metrics
 from sklearn.base import BaseEstimator
-from sklearn.svm import SVC
-from sklearn.preprocessing import LabelEncoder
 from sklearn.neighbors import NearestNeighbors
-import numpy as np
-from ..utils import minority_majority_name, minority_majority_split
-import math
+from sklearn.preprocessing import LabelEncoder
+from sklearn.svm import SVC
+
+from ..streams import minority_majority_name, minority_majority_split
 
 
 class REA(BaseEstimator):

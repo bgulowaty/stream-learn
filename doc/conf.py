@@ -1,17 +1,17 @@
 import sys
-import os
-import strlearn
-import sphinx
-from sklearn.externals.six import u
 
+import os
 import sphinx_rtd_theme
+
+import strlearn
+
 html_theme = 'sphinx_rtd_theme'
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('sphinxext'))
 
-a = strlearn.utils.arff
+a = strlearn.streams.arff
 print(a)
 
 extensions = [
