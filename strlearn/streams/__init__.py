@@ -1,5 +1,6 @@
-from .BaseStream import BaseStream
+from strlearn.streams.base.BaseStream import BaseStream
 from .LimitedStream import LimitedStream
+from .Stream import Stream
 from .ScikitMultiflowStreamAdapter import ScikitMultiflowStreamAdapter
 from .StreamGenerator import StreamGenerator
 from .arff import ARFF
@@ -11,6 +12,7 @@ __all__ = [
     "ARFF",
     "StreamGenerator",
     "BaseStream",
+    "Stream",
     "ScikitMultiflowStreamAdapter",
     "LimitedStream"
 ]

@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.datasets import make_classification
 from typing import Tuple, Any
 
-from strlearn.streams.BaseStream import BaseStream
+from strlearn.streams.base.BaseStream import BaseStream
 
 DRIFT_TYPES = ("sudden", "gradual")
 

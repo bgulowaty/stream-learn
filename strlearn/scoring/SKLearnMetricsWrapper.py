@@ -5,7 +5,6 @@ from typing import Iterable, Any
 from strlearn.scoring.BaseScorer import BaseScorer
 
 
-@typechecked
 @attrs
 class SKLearnMetricsWrapper(BaseScorer):
     _metric: Any = attrib()
@@ -16,5 +15,5 @@ class SKLearnMetricsWrapper(BaseScorer):
         return self._name
 
     @override
-    def score(self, y_true: Iterable, y_pred: Iterable):
+    def score(self, y_true: Iterable, y_pred: Iterable, classes: Iterable):
         return self._metric(y_true, y_pred)

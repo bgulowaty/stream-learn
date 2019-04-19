@@ -5,7 +5,7 @@ from typing import Iterable
 class BaseScorer(metaclass=ABCMeta):
 
     @abstractmethod
-    def score(self, y_true: Iterable, y_pred: Iterable):
+    def score(self, y_true: Iterable, y_pred: Iterable, classes: Iterable):
         raise NotImplementedError
 
     @abstractmethod

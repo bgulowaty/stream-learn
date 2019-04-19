@@ -5,7 +5,6 @@ from typing import Iterable
 from strlearn.scoring.BaseScorer import BaseScorer
 
 
-@typechecked
 class AccuracyScorer(BaseScorer):
 
     @override
@@ -13,5 +12,5 @@ class AccuracyScorer(BaseScorer):
         return "accuracy"
 
     @override
-    def score(self, y_true: Iterable, y_pred: Iterable):
+    def score(self, y_true: Iterable, y_pred: Iterable, classes: Iterable):
         return accuracy_score(y_true, y_pred)
