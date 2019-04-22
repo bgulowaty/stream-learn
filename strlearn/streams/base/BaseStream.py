@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Tuple, TypeVar, Iterable, Generic
-
+from typing import Tuple, TypeVar, Generic, Collection
 
 X = TypeVar('X')
 Y = TypeVar('Y')
@@ -13,9 +12,9 @@ class BaseStream(Generic[X, Y], metaclass=ABCMeta):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_next_samples(self, chunk_size: int = 1) -> Tuple[Iterable[X], Iterable[Y]]:
+    def get_next_samples(self, chunk_size: int = 1) -> Tuple[Collection[X], Collection[Y]]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_classes(self) -> Iterable[Y]:
+    def get_classes(self) -> Collection[Y]:
         raise NotImplementedError()

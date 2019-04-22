@@ -27,10 +27,10 @@ class PrequentialLearner(BaseLearner):
             x, y = self._stream.get_next_samples(self._chunk_size)
 
             if self._iteration > 0:
-                if self._testing_stream and not self._testing_stream.is_dry():
+                if self._testing_stream is not None and not self._testing_stream.is_dry():
                     x_test, y_test = self._testing_stream.get_next_samples(self._testing_stream_chunk_size)
                     self._send_scores_to_listener(self.test(x_test, y_test, self._testing_stream.get_classes()))
-                elif not self._testing_stream:
+                elif self._testing_stream is None:
                     self._send_scores_to_listener(self.test(x, y, self._stream.get_classes()))
 
             self.train(x, y)
@@ -38,7 +38,6 @@ class PrequentialLearner(BaseLearner):
 
     def test(self, x, y, classes):
         y_pred = self._estimator.predict(x)
-
         scores = {scorer.get_name(): scorer.score(y, y_pred, classes) for scorer in self._scorers}
 
         return scores

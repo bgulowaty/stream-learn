@@ -1,12 +1,9 @@
 from attr import attrs, attrib
-from pytypes import typechecked
-from typing import Tuple, Any, List, Iterable
+from typing import Tuple, Collection
 
 from strlearn.streams import BaseStream
-from strlearn.streams.base.BaseStream import Y, X
 
 
-# @typechecked
 @attrs
 class LimitedStream(BaseStream):
     base_stream: BaseStream = attrib()
@@ -17,7 +14,7 @@ class LimitedStream(BaseStream):
     def is_dry(self) -> bool:
         return self._processed_samples == self.limit
 
-    def get_next_samples(self, chunk_size: int = 1) -> Tuple[Iterable[X], Iterable[Y]]:
+    def get_next_samples(self, chunk_size: int = 1) -> Tuple:
         next_chunk_would_reach_limit = (self._processed_samples + chunk_size) > self.limit
         if next_chunk_would_reach_limit:
             samples_left_to_reach_limit = self.limit - self._processed_samples
@@ -29,6 +26,6 @@ class LimitedStream(BaseStream):
         self._processed_samples += chunk_size
         return samples
 
-    def get_classes(self) -> Iterable[Y]:
+    def get_classes(self) -> Collection:
         return self.base_stream.get_classes()
 

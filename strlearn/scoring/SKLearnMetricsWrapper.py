@@ -1,13 +1,13 @@
 from attr import attrs, attrib
-from pytypes import typechecked, override
-from typing import Iterable, Any
+from pytypes import override
+from typing import Iterable, Callable
 
 from strlearn.scoring.BaseScorer import BaseScorer
 
 
 @attrs
 class SKLearnMetricsWrapper(BaseScorer):
-    _metric: Any = attrib()
+    _metric: Callable = attrib()
     _name: str = attrib()
 
     @override
