@@ -1,7 +1,8 @@
 from itertools import islice, chain
+
 from attr import attrs, attrib
 from numpy import array, unique
-from typing import Iterable, Tuple, Collection
+from typing import Tuple, Collection
 
 from strlearn.streams.base import BaseStream
 from strlearn.streams.base.BaseStream import X as X_TYPE, Y as Y_TYPE
@@ -17,6 +18,9 @@ class Stream(BaseStream):
     def __attrs_post_init__(self):
         self._X_iterator = iter(self.X)
         self._Y_iterator = iter(self.Y)
+        self._is_dry = False
+        self._next_X = None
+        self._next_Y = None
 
         if self._classes is None:
             self._classes = unique(self.Y)
@@ -24,9 +28,6 @@ class Stream(BaseStream):
         if len(self.X) != len(self.Y):
             raise AttributeError
 
-    _is_dry = False
-    _next_X = None
-    _next_Y = None
 
     def is_dry(self) -> bool:
         return self._is_dry

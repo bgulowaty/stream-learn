@@ -2,6 +2,8 @@ from attr import attrs, attrib
 import numpy as np
 from copy import deepcopy
 
+from strlearn.ensembles.voting import WeightedMajorityPredictionCombiner
+
 EPS = np.finfo(float).eps
 
 
@@ -9,14 +11,15 @@ EPS = np.finfo(float).eps
 class LearnNSE:
     _base_estimator = attrib()
     _a = attrib(default=0.5)
-    _b = attrib(default=15)
+    _b = attrib(default=10)
 
-    _skts = []
-    _bkts = []
-    _wkts = []
-    _skts_est = []
-    _classes = []
-    _ensemble = []
+    def __attrs_post_init__(self):
+        self._skts = []
+        self._bkts = []
+        self._wkts = []
+        self._skts_est = []
+        self._classes = []
+        self._ensemble = []
 
     def partial_fit(self, x, y, classes):
         self._classes = classes
@@ -31,7 +34,6 @@ class LearnNSE:
             wrong_predictions_indicies = [idx for idx, pred in enumerate(y_pred) if pred != y[idx]]
             good_predictions_indicies = [idx for idx, pred in enumerate(y_pred) if pred == y[idx]]
             wrong_predictions_count = len(wrong_predictions_indicies)
-            good_predictions_count = len(y_pred) - wrong_predictions_count
 
             ensemble_error = wrong_predictions_count / batch_size
 
@@ -39,7 +41,7 @@ class LearnNSE:
                                 else 1.0 / batch_size
                                 for prediction_idx, _ in enumerate(y_pred)])
 
-            D = weights / weights.sum()
+            D = weights / (weights.sum() + EPS)
 
         classifier = deepcopy(self._base_estimator)
         classifier.fit(x, y, sample_weight=D)
@@ -48,6 +50,7 @@ class LearnNSE:
         self._skts.append([])
         self._bkts.append([])
         self._wkts.append([])
+        self._skts_est.append([])
 
         t = len(self._ensemble) - 1
         for k, classifier in enumerate(self._ensemble):
@@ -65,22 +68,20 @@ class LearnNSE:
                 ekt = 0.5
 
             bkt = ekt / (1.0 - ekt)
+            self._bkts[k].append(bkt)
 
             skt = 1.0 / (1.0 + np.exp(-self._a * (t - k - self._b)))
-            skt = skt / (np.sum(self._skts[k]) + skt)
+            skt = skt / (np.flip(self._skts[k])[:t - k].sum() + EPS)
             self._skts[k].append(skt)
 
-            bkt_est = np.sum(self._skts[k]) * np.sum(self._bkts[k])
-            self._bkts[k].append(bkt_est)
+            bkt_est = np.sum(np.flip(self._skts[k])[:t - k] * np.flip(self._bkts[k])[:t - k])
 
             wkt = np.log(1.0 / (bkt_est + EPS))
             self._wkts[k].append(wkt)
 
     def predict(self, x):
-        ensemble_predictions = []
-        for k, estimator in enumerate(self._ensemble):
-            y_pred = estimator.predict_proba(x)
-            ensemble_predictions.append(self._wkts[k][-1] * y_pred)
-        ensemble_predictions = np.array(ensemble_predictions).sum(axis=0)
-        predicted_classes_indicies = np.argmax(ensemble_predictions, axis=1)
-        return np.array([self._classes[idx] for idx in predicted_classes_indicies])
+        current_weights = [self._wkts[k][-1] for k in range(len(self._ensemble))]
+        ensemble_predictions_combiner = WeightedMajorityPredictionCombiner(
+            self._ensemble, current_weights, self._classes)
+
+        return ensemble_predictions_combiner.predict(x)

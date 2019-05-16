@@ -19,8 +19,8 @@ class PrequentialLearner(BaseLearner):
     _testing_stream_chunk_size: Optional[int] = attrib(default=1)
     _scorers: Iterable = attrib(factory=list)
 
-    _iteration = 0
-    _scores = {}
+    def __attrs_post_init__(self):
+        self._iteration = 0
 
     def run(self):
         while self._stream.is_dry() is False:

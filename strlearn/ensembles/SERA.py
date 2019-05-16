@@ -2,6 +2,8 @@ import numpy as np
 from attr import attrs, attrib
 from copy import deepcopy
 
+from strlearn.ensembles.voting import MajorityPredictionCombiner
+
 
 @attrs
 class SERA:
@@ -78,10 +80,6 @@ class SERA:
             self._minority_instances_y) > 0 else Y_min
 
     def predict(self, x):
-        ensemble_predictions = []
-        for k, estimator in enumerate(self._ensemble):
-            y_pred = estimator.predict_proba(x)
-            ensemble_predictions.append(y_pred)
-        ensemble_predictions = np.array(ensemble_predictions).sum(axis=0)
-        predicted_classes_indicies = np.argmax(ensemble_predictions, axis=1)
-        return np.array([self._classes[idx] for idx in predicted_classes_indicies])
+        ensemble_predictions_combiner = MajorityPredictionCombiner(self._ensemble, self._classes)
+
+        return ensemble_predictions_combiner.predict(x)

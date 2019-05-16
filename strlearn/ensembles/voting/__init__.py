@@ -1,0 +1,5 @@
+from .BaseEnsemblePredictionCombiner import BaseEnsemblePredictionCombiner
+from .MajorityPredictionCombiner import MajorityPredictionCombiner
+from .WeightedMajorityPredictionCombiner import WeightedMajorityPredictionCombiner
+
+__all__ = ['BaseEnsemblePredictionCombiner', 'MajorityPredictionCombiner', 'WeightedMajorityPredictionCombiner']
