@@ -3,15 +3,18 @@ import numpy as np
 from copy import deepcopy
 
 from strlearn.ensembles.voting import WeightedMajorityPredictionCombiner
+from strlearn.preprocessing.oversampling import smote
+from strlearn.utils import split_minority_majority
 
 EPS = np.finfo(float).eps
 
 
 @attrs
-class LearnNSE:
+class LearnCDS:
     _base_estimator = attrib()
     _a = attrib(default=0.5)
     _b = attrib(default=10)
+    _k = attrib(default=1)
 
     def __attrs_post_init__(self):
         self._skts = []
@@ -43,10 +46,14 @@ class LearnNSE:
 
             D = weights / (weights.sum() + EPS)
 
+        x_min, y_min, _, _ = split_minority_majority(x, y)
+        x_smoted = smote(x_min, 1, self._k)
+        y_smoted = [y_min[0] for _ in x_smoted]
+
         classifier = deepcopy(self._base_estimator)
-        # I wonder
-        # classifier.fit(x, y, sample_weight=D)
-        classifier.fit(x, y)
+        classifier.fit(
+            np.concatenate((x, x_smoted), axis=0),
+            np.concatenate((y, y_smoted), axis=0))
         self._ensemble.append(classifier)
 
         self._skts.append([])
@@ -64,7 +71,7 @@ class LearnNSE:
 
             if k == t and ekt > 0.5:
                 new_clf = deepcopy(self._base_estimator)
-                new_clf.fit(x, y, sample_weight=D)
+                new_clf.fit(x, y)
                 self._ensemble[k] = new_clf
             elif k < t and ekt > 0.5:
                 ekt = 0.5

@@ -5,14 +5,13 @@ from numpy import array, unique
 from typing import Tuple, Collection
 
 from strlearn.streams.base import BaseStream
-from strlearn.streams.base.BaseStream import X as X_TYPE, Y as Y_TYPE
 
 
 @attrs
 class Stream(BaseStream):
-    X: Collection[X_TYPE] = attrib()
-    Y: Collection[Y_TYPE] = attrib()
-    _classes: Collection[Y_TYPE] = attrib(default=None)
+    X: Collection = attrib()
+    Y: Collection = attrib()
+    _classes: Collection = attrib(default=None)
     _variable_output_on_dry: bool = attrib(default=True)
 
     def __attrs_post_init__(self):
@@ -27,7 +26,6 @@ class Stream(BaseStream):
 
         if len(self.X) != len(self.Y):
             raise AttributeError
-
 
     def is_dry(self) -> bool:
         return self._is_dry
@@ -52,4 +50,3 @@ class Stream(BaseStream):
             return True
         except StopIteration:
             return False
-

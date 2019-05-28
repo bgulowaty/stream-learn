@@ -1,11 +1,11 @@
 from abc import ABCMeta, abstractmethod
-from typing import Tuple, TypeVar, Generic, Collection
+from typing import Tuple, TypeVar, Collection
 
 X = TypeVar('X')
 Y = TypeVar('Y')
 
 
-class BaseStream(Generic[X, Y], metaclass=ABCMeta):
+class BaseStream(metaclass=ABCMeta):
 
     @abstractmethod
     def is_dry(self) -> bool:
