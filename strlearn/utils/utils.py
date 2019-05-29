@@ -24,5 +24,10 @@ def load_arff(path):
     attribute_names = ds.dtype.names[0:-1]
     class_name = ds.dtype.names[-1]
     x = ds[list(attribute_names)]
+    x = np.array(x.tolist())
+
+    if x.dtype.kind == 'S':
+        x = x.astype('float')
+
     y = LabelEncoder().fit_transform(ds[class_name])
-    return np.array(x.tolist()), y
+    return x, y

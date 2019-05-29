@@ -1,6 +1,7 @@
 import numpy as np
 from attr import attrs, attrib
 
+
 from strlearn.ensembles.voting import BaseEnsemblePredictionCombiner
 
 

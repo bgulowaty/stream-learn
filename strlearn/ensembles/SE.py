@@ -1,37 +1,29 @@
 from attr import attrs, attrib
 from imblearn.under_sampling import RandomUnderSampler
 from copy import deepcopy
+from strlearn.utils import split_minority_majority
 import numpy as np
+
+from strlearn.ensembles.voting import MajorityPredictionCombiner
+
+from collections import defaultdict
 
 
 @attrs
 class SE:
     _base_estimator = attrib()
-    _sampling_strategy = attrib(default='distance')  # or 'uniform'
+    _minority_sampling_strategy = attrib(default='fixed')  # or 'fading'
     _sampling_rate = attrib(default=0.3)
-    _minority_sample_batches_kept = attrib(default=20)
-    _ensemble_size = attrib(default=30)
-    _models_created_each_iteration = attrib(default=3)
+    _minority_sample_batches_kept = attrib(default=10)
+    _ensemble_size = attrib(default=15)
+    _max_models_created_each_iteration = attrib(default=3)
 
     def __attrs_post_init__(self):
-        self._undersampler = RandomUnderSampler(sampling_strategy=1.0 / self._models_created_each_iteration)
+        self._undersampler = RandomUnderSampler(sampling_strategy=1.0 / self._max_models_created_each_iteration)
 
-    _ensemble = []
-    _minority_samples_aggregate = {}
-
-    def _split_minority_majority(self, x, y):
-        classes, counts = np.unique(y, return_counts=True)
-        sorted_indicies = np.argsort(counts)
-        sorted_classes = classes[sorted_indicies]
-
-        minority_class = sorted_classes[0]
-        other_classes = sorted_classes[1:]
-
-        minority_class_indicies = np.isin(y, minority_class)
-        other_classes_indicies = np.isin(y, other_classes)
-
-        return x[minority_class_indicies], y[minority_class_indicies], x[other_classes_indicies], y[
-            other_classes_indicies]
+    _undersampler = RandomUnderSampler
+    _ensemble = attrib(factory=list, init=False)
+    _minority_samples_aggregate = attrib(factory=lambda: defaultdict(list), init=False)
 
     def partial_fit(self, x, y, classes):
         if len(np.unique(y)) < 2:
@@ -39,65 +31,91 @@ class SE:
 
         self._classes = classes
 
-        X_min, Y_min, X_maj, Y_maj = self._split_minority_majority(x, y)
+        X_min, Y_min, X_maj, Y_maj = split_minority_majority(x, y)
+
         minority_class = Y_min[0]
-        if minority_class in self._minority_samples_aggregate:
-            self._minority_samples_aggregate[minority_class].append((X_min, Y_min))
-        else:
-            self._minority_samples_aggregate[minority_class] = [(X_min, Y_min)]
+
+        self._minority_samples_aggregate[minority_class].append((X_min, Y_min))
 
         if len(self._minority_samples_aggregate[minority_class]) > self._minority_sample_batches_kept:
-            self._minority_samples_aggregate[minority_class] = np.delete(
-                self._minority_samples_aggregate[minority_class], 0, axis=0).tolist()
+            self._minority_samples_aggregate[minority_class] = self._minority_samples_aggregate[minority_class][1:]
 
-        X_train = []
-        Y_train = []
+        X_min_accumulated = []
+        Y_min_accumulated = []
         # Add minority class aggregate to training chunk
         m = len(self._minority_samples_aggregate[minority_class])
         #         print(self._minority_samples_aggregate[minority_class])
         for idx, (chunk_x, chunk_y) in enumerate(self._minority_samples_aggregate[minority_class]):
-            if self._sampling_strategy is 'distance':
+            if self._minority_sampling_strategy is 'fading':
                 r = 1 - (m - idx + 1) * self._sampling_rate
-                print(f"len = {m}, idx = {idx}, r = {r}")
-            elif self._sampling_strategy is 'uniform':
+            else:  # fixed
                 r = self._sampling_rate
 
-            samples_count_to_pick = int(np.ceil(len(chunk_x) * 2 * r))
-            randomly_choosen_indicies = np.random.choice(range(len(chunk_x)), samples_count_to_pick, replace=False)
-            X_train = np.concatenate((X_train, chunk_x[randomly_choosen_indicies])) if len(X_train) > 0 else chunk_x[
-                randomly_choosen_indicies]
-            Y_train = np.concatenate((Y_train, chunk_y[randomly_choosen_indicies])) if len(Y_train) > 0 else chunk_y[
-                randomly_choosen_indicies]
 
-        # flip X_Train and take only most recent elements to make len X_maj = param * len X_min
-        X_train = X_train[::-1][:int(len(X_maj) / self._models_created_each_iteration)]
-        Y_train = Y_train[::-1][:int(len(Y_maj) / self._models_created_each_iteration)]
+            samples_to_pick = int(np.ceil(len(chunk_x) * r))
 
-        # Undersample majority class to match ratio defined by _models_created_each_iteration
-        X_train_undersampled, Y_train_undersampled = self._undersampler.fit_resample(
-            np.concatenate((X_maj, X_train)), np.concatenate((Y_maj, Y_train))
-        )
+            # print(f"idx = {idx}, size = {m}, r = {r}, picking {samples_to_pick}")
 
-        X_train_min, Y_train_min, X_maj_undersampled, Y_maj_undersampled = self._split_minority_majority(
-            X_train_undersampled, Y_train_undersampled)
+            if samples_to_pick > 0:
+                all_chunk_indices = range(len(chunk_x))
 
-        train_major_x_split = np.array_split(X_maj_undersampled, self._models_created_each_iteration)
-        train_major_y_split = np.array_split(Y_maj_undersampled, self._models_created_each_iteration)
+                randomly_chosen_indices = np.random.choice(all_chunk_indices, samples_to_pick, replace=False)
 
-        for (X_major_train, Y_major_train) in zip(train_major_x_split, train_major_y_split):
-            clf = deepcopy(self._base_estimator)
-            clf.fit(np.concatenate([X_major_train, X_train_min]), np.concatenate([Y_major_train, Y_train_min]))
-            self._ensemble = np.append(self._ensemble, clf)
-            if len(self._ensemble) > self._ensemble_size:
-                self._ensemble = np.delete(self._ensemble, 0, axis=0)
+                X_min_accumulated = np.concatenate((X_min_accumulated, chunk_x[randomly_chosen_indices])) if len(X_min_accumulated) > 0 else chunk_x[
+                    randomly_chosen_indices]
+                Y_min_accumulated = np.concatenate((Y_min_accumulated, chunk_y[randomly_chosen_indices])) if len(Y_min_accumulated) > 0 else chunk_y[
+                    randomly_chosen_indices]
+
+        # Reverse lists to make newest samples come first
+        X_min_accumulated = np.flip(X_min_accumulated)
+        Y_min_accumulated = np.flip(Y_min_accumulated)
+
+        majority_chunk_size = len(X_maj)
+        minority_acc_size = len(X_min_accumulated)
+        min_maj_ratio = minority_acc_size/majority_chunk_size
+
+        # print(f"ratio = {min_maj_ratio}")
+
+        if min_maj_ratio > 1:
+            self._create_clf_and_add_to_ensemble(
+                np.concatenate((X_maj, X_min[:majority_chunk_size])),
+                np.concatenate((Y_maj, Y_min[:majority_chunk_size]))
+            )
+        elif min_maj_ratio > 0.5:
+            X_maj, Y_maj = self._randomly_undersample(X_maj, Y_maj, minority_acc_size)
+            self._create_clf_and_add_to_ensemble(
+                np.concatenate((X_maj, X_min)),
+                np.concatenate((Y_maj, Y_min))
+            )
+        else:
+            max_models_created = int(majority_chunk_size/minority_acc_size)
+            difference = majority_chunk_size - minority_acc_size * max_models_created
+            if difference > 0:
+                X_maj, Y_maj = self._randomly_undersample(X_maj, Y_maj, majority_chunk_size - difference)
+
+            X_maj_splits = np.array_split(X_maj, max_models_created)
+            Y_maj_splits = np.array_split(Y_maj, max_models_created)
+
+            for (X_maj_chunk, Y_maj_chunk) in zip(X_maj_splits, Y_maj_splits):
+                self._create_clf_and_add_to_ensemble(
+                    np.concatenate((X_maj_chunk, X_min_accumulated)),
+                    np.concatenate((Y_maj_chunk, Y_min_accumulated))
+                )
+
+    def _randomly_undersample(self, x, y, desired_no):
+        indices = list(range(len(x)))
+        undersampled_indices = np.random.choice(indices, desired_no, replace=False)
+        return x[undersampled_indices], y[undersampled_indices]
+
+    def _create_clf_and_add_to_ensemble(self, x, y):
+        clf = deepcopy(self._base_estimator)
+        clf.fit(x, y)
+        if len(self._ensemble) == self._ensemble_size:
+            self._ensemble = self._ensemble[1:]
+
+        self._ensemble.append(clf)
 
     def predict(self, x):
-        ensemble_predictions = []
-        for k, estimator in enumerate(self._ensemble):
-            y_pred = estimator.predict_proba(x)
-            ensemble_predictions.append(y_pred)
-        ensemble_predictions = np.array(ensemble_predictions).sum(axis=0)
-        predicted_classes_indicies = np.argmax(ensemble_predictions, axis=1)
-        return np.array([self._classes[idx] for idx in predicted_classes_indicies])
+        voter = MajorityPredictionCombiner(self._ensemble, self._classes)
 
-
+        return voter.predict(x)
