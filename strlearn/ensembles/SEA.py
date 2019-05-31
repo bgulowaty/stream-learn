@@ -11,7 +11,7 @@ EPS = np.finfo(float).eps
 @attrs
 class SEA:
     _base_estimator = attrib()
-    _ensemble_size = attrib(default=15)
+    _ensemble_size = attrib(default=20)
     _ensemble = attrib(factory=list, init=False)
     _ensemble_quality_measurer = attrib(default=balanced_accuracy_score)
     _classes = attrib(default=[], init=False)

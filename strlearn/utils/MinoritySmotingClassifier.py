@@ -1,6 +1,7 @@
 from attr import attrs, attrib
 from strlearn.preprocessing.oversampling import smote
 from strlearn.utils import split_minority_majority
+import numpy as np
 
 
 def default_smote_wrapper(x_min, x_maj, k, sampling_percentage):

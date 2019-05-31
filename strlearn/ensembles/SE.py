@@ -1,12 +1,10 @@
-from attr import attrs, attrib
-from imblearn.under_sampling import RandomUnderSampler
-from copy import deepcopy
-from strlearn.utils import split_minority_majority
 import numpy as np
+from attr import attrs, attrib
+from collections import defaultdict
+from copy import deepcopy
 
 from strlearn.ensembles.voting import MajorityPredictionCombiner
-
-from collections import defaultdict
+from strlearn.utils import split_minority_majority
 
 
 @attrs
@@ -15,20 +13,12 @@ class SE:
     _minority_sampling_strategy = attrib(default='fixed')  # or 'fading'
     _sampling_rate = attrib(default=0.3)
     _minority_sample_batches_kept = attrib(default=10)
-    _ensemble_size = attrib(default=15)
-    _max_models_created_each_iteration = attrib(default=3)
+    _ensemble_size = attrib(default=20)
 
-    def __attrs_post_init__(self):
-        self._undersampler = RandomUnderSampler(sampling_strategy=1.0 / self._max_models_created_each_iteration)
-
-    _undersampler = RandomUnderSampler
     _ensemble = attrib(factory=list, init=False)
     _minority_samples_aggregate = attrib(factory=lambda: defaultdict(list), init=False)
 
     def partial_fit(self, x, y, classes):
-        if len(np.unique(y)) < 2:
-            return
-
         self._classes = classes
 
         X_min, Y_min, X_maj, Y_maj = split_minority_majority(x, y)
@@ -42,18 +32,17 @@ class SE:
 
         X_min_accumulated = []
         Y_min_accumulated = []
+
         # Add minority class aggregate to training chunk
         m = len(self._minority_samples_aggregate[minority_class])
-        #         print(self._minority_samples_aggregate[minority_class])
+
         for idx, (chunk_x, chunk_y) in enumerate(self._minority_samples_aggregate[minority_class]):
             if self._minority_sampling_strategy is 'fading':
                 r = 1 - (m - idx + 1) * self._sampling_rate
             else:  # fixed
                 r = self._sampling_rate
 
-
             samples_to_pick = int(np.ceil(len(chunk_x) * r))
-
             # print(f"idx = {idx}, size = {m}, r = {r}, picking {samples_to_pick}")
 
             if samples_to_pick > 0:
@@ -74,7 +63,6 @@ class SE:
         minority_acc_size = len(X_min_accumulated)
         min_maj_ratio = minority_acc_size/majority_chunk_size
 
-        # print(f"ratio = {min_maj_ratio}")
 
         if min_maj_ratio > 1:
             self._create_clf_and_add_to_ensemble(

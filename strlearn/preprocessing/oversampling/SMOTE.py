@@ -65,26 +65,28 @@ def smote_borderline1(X_minority, X_majority, k1=3, k2=3, sampling_percentage=10
 
     synthetics = []
 
-    danger_samples_indices_iter = cycle(danger_samples_indices)
-    used_neighbors = defaultdict(list)
+    if len(danger_samples_indices) != 0:
 
-    minority_neighbors = kneighbors_graph(X_minority, n_neighbors=k2)
+        used_neighbors = defaultdict(list)
+        danger_samples_indices_iter = cycle(danger_samples_indices)
 
-    for _ in range(samples_to_create):
-        idx = next(danger_samples_indices_iter)
-        sample = X_minority[idx]
-        if dont_restrict:
-            sample_minority_neighbors = find_neighbor_in_graph(minority_neighbors, idx)
-        else:
-            sample_minority_neighbors = find_neighbor_in_graph(minority_neighbors, idx, used_neighbors[idx])
+        minority_neighbors = kneighbors_graph(X_minority, n_neighbors=k2)
 
-        if len(sample_minority_neighbors) != 0:
-            randomly_chosen_neighbor_idx = np.random.choice(sample_minority_neighbors)
-            randomly_chosen_neighbor_sample = all_samples[randomly_chosen_neighbor_idx]
+        for _ in range(samples_to_create):
+            idx = next(danger_samples_indices_iter)
+            sample = X_minority[idx]
+            if dont_restrict:
+                sample_minority_neighbors = find_neighbor_in_graph(minority_neighbors, idx)
+            else:
+                sample_minority_neighbors = find_neighbor_in_graph(minority_neighbors, idx, used_neighbors[idx])
 
-            used_neighbors[idx].append(randomly_chosen_neighbor_idx)
+            if len(sample_minority_neighbors) != 0:
+                randomly_chosen_neighbor_idx = np.random.choice(sample_minority_neighbors)
+                randomly_chosen_neighbor_sample = all_samples[randomly_chosen_neighbor_idx]
 
-            synthetics.append(generate_syntetic_sample(sample, randomly_chosen_neighbor_sample))
+                used_neighbors[idx].append(randomly_chosen_neighbor_idx)
+
+                synthetics.append(generate_syntetic_sample(sample, randomly_chosen_neighbor_sample))
 
     return np.array(synthetics)
 
@@ -126,33 +128,36 @@ def smote_borderline2(X_minority, X_majority, k1=3, k2=3, sampling_percentage=10
 
     synthetics = []
 
-    danger_samples_indices_iter = cycle(danger_samples_indices)
-    used_neighbors = defaultdict(list)
+    if len(danger_samples_indices) != 0:
 
-    all_neighbors = kneighbors_graph(np.concatenate([X_minority, X_majority]), n_neighbors=k2)
 
-    for _ in range(samples_to_create):
-        idx = next(danger_samples_indices_iter)
-        sample = X_minority[idx]
+        danger_samples_indices_iter = cycle(danger_samples_indices)
+        used_neighbors = defaultdict(list)
 
-        if dont_restrict:
-            sample_neighbors = find_neighbor_in_graph(all_neighbors, idx)
-        else:
-            sample_neighbors = find_neighbor_in_graph(all_neighbors, idx, used_neighbors[idx])
+        all_neighbors = kneighbors_graph(np.concatenate([X_minority, X_majority]), n_neighbors=k2)
 
-        if len(sample_neighbors) != 0:
-            randomly_chosen_neighbor_idx = np.random.choice(sample_neighbors)
-            randomly_chosen_neighbor_sample = all_samples[randomly_chosen_neighbor_idx]
+        for _ in range(samples_to_create):
+            idx = next(danger_samples_indices_iter)
+            sample = X_minority[idx]
 
-            used_neighbors[idx].append(randomly_chosen_neighbor_idx)
-
-            neighbor_is_majority = randomly_chosen_neighbor_idx > len(X_minority)
-            if neighbor_is_majority:
-                synthetic = generate_syntetic_sample(sample, randomly_chosen_neighbor_sample, 0.5)
+            if dont_restrict:
+                sample_neighbors = find_neighbor_in_graph(all_neighbors, idx)
             else:
-                synthetic = generate_syntetic_sample(sample, randomly_chosen_neighbor_sample)
+                sample_neighbors = find_neighbor_in_graph(all_neighbors, idx, used_neighbors[idx])
 
-            synthetics.append(synthetic)
+            if len(sample_neighbors) != 0:
+                randomly_chosen_neighbor_idx = np.random.choice(sample_neighbors)
+                randomly_chosen_neighbor_sample = all_samples[randomly_chosen_neighbor_idx]
+
+                used_neighbors[idx].append(randomly_chosen_neighbor_idx)
+
+                neighbor_is_majority = randomly_chosen_neighbor_idx > len(X_minority)
+                if neighbor_is_majority:
+                    synthetic = generate_syntetic_sample(sample, randomly_chosen_neighbor_sample, 0.5)
+                else:
+                    synthetic = generate_syntetic_sample(sample, randomly_chosen_neighbor_sample)
+
+                synthetics.append(synthetic)
 
     return np.array(synthetics)
 
