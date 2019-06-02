@@ -180,9 +180,9 @@ def smote_safe_level(X_minority, X_majority, k=3, sampling_percentage=100, dont_
 
         # calculate safe level for seed sample
         all_neighbors_indices = find_neighbor_in_graph(all_neighbors_graph, idx)
-        all_neighbors = all_samples[all_neighbors_indices]
-        minority_neighbors = [neighbor for neighbor in all_neighbors if neighbor in X_minority]
-        safe_level = len(minority_neighbors) / k
+        minority_neighbors_count = len([idx for idx in all_neighbors_indices if idx < len(X_minority)])
+
+        safe_level = minority_neighbors_count / k
 
         # pick random minorty neighbor
         if dont_restrict:
@@ -196,11 +196,10 @@ def smote_safe_level(X_minority, X_majority, k=3, sampling_percentage=100, dont_
             used_neighbors[idx].append(minority_neighbor_idx)
 
             # calculate safe level for minority sample
-            minority_neighbor_all_neighbors = all_samples[
-                find_neighbor_in_graph(all_neighbors_graph, minority_neighbor_idx)]
-            minority_neighbor_minority_neighbors = [neigh for neigh in minority_neighbor_all_neighbors if
-                                                    neigh in X_minority]
-            minority_neighbor_safe_level = len(minority_neighbor_minority_neighbors) / k
+            neighbor_neighbors = find_neighbor_in_graph(all_neighbors_graph, minority_neighbor_idx)
+            neighbor_minority_neighbors = len([idx for idx in neighbor_neighbors if idx < len(X_minority)])
+
+            minority_neighbor_safe_level = neighbor_minority_neighbors / k
 
             if minority_neighbor_safe_level != 0:
                 safe_level_ratio = safe_level / minority_neighbor_safe_level
